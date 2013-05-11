@@ -19,6 +19,17 @@ include_recipe "postgresql::client"
 include_recipe "postgresql::server"
 include_recipe "database::postgresql"
 
+if node["databox"]["postgresql"]["wal_e"]
+  include_recipe "git"
+  include_recipe "python"
+  include_recipe "databox::postgresql_wal_e"
+
+  node['postgresql']['config']["wal_level"] = "archive"
+  node['postgresql']['config']["archive_mode"] = "on"
+  node['postgresql']['config']["archive_command"] = "envdir /etc/wal-e.d/env /usr/local/bin/wal-e wal-push %p"
+  node['postgresql']['config']["archive_timeout"] = 60
+end
+
 #TODO Chef 11 compat?
 node.set['postgresql']['pg_hba'] = [
   {:type => 'local', :db => 'all', :user => 'postgres', :addr => nil, :method => 'ident'},
